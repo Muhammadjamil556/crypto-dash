@@ -4,6 +4,8 @@ const API_URL = import.meta.env.VITE_COINS_API_URL;
 // query is a fragment such as 'per_page=10'; null skips the fetch
 const useCoinList = (query) => {
   const [coins, setCoins] = useState([]);
+  // The query that coins came from, which lags behind query while fetching
+  const [loadedQuery, setLoadedQuery] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -25,6 +27,7 @@ const useCoinList = (query) => {
         if (!res.ok) throw new Error('Failed to fetch data');
         const data = await res.json();
         setCoins(data);
+        setLoadedQuery(query);
       } catch (err) {
         if (!controller.signal.aborted) setError(err.message);
       } finally {
@@ -37,7 +40,7 @@ const useCoinList = (query) => {
     return () => controller.abort();
   }, [query]);
 
-  return { coins, loading, error };
+  return { coins, loadedQuery, loading, error };
 };
 
 export default useCoinList;
