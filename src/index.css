@@ -41,7 +41,8 @@ a {
   transform: translateY(-5px);
 }
 
-.coin-card-link {
+.coin-card-link,
+.coin-card-unavailable {
   display: block;
   padding: 1.5rem;
 }

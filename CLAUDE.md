@@ -38,7 +38,7 @@ Data is fetched in three independent places using `fetch` inside `useEffect`, wi
 
 Only `limit` triggers a main list refetch. The API request always uses `order=market_cap_desc`; filtering and sorting happen client-side in `pages/home.jsx`, so they only apply to the loaded coins (the top `limit`, or the favorites). A new sort option needs both an `<option>` in `SortSelector.jsx` and a matching `case` in `home.jsx`.
 
-Favorites are coin IDs in `localStorage` (`crypto-dash:favorites`), managed by `hooks/useFavorites.js`, which syncs across tabs. The favorites view fetches by ID because a starred coin may be outside the top `limit`. `favoriteIds` in `home.jsx` is a snapshot of the IDs to fetch, kept separate from `favorites` so unstarring doesn't refetch.
+Favorites are coin IDs in `localStorage` (`crypto-dash:favorites`), managed by `hooks/useFavorites.js`, which syncs across tabs. The favorites view fetches by ID because a starred coin may be outside the top `limit`. `favoriteIds` in `home.jsx` is a snapshot of the IDs to fetch, kept separate from `favorites` so unstarring doesn't refetch. CoinGecko omits IDs it has no data for, so Home shows an `UnavailableCoinCard` for each requested favorite that wasn't returned; otherwise it couldn't be unstarred.
 
 Chart.js is tree-shaken: scales, elements, and plugins must be registered with `ChartJS.register(...)` in `CoinChart.jsx` before use. The area fill is configured with `fill: true`, but the `Filler` plugin it needs is not registered.
 

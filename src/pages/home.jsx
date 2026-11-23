@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import CoinCard from '../components/CoinCard';
+import UnavailableCoinCard from '../components/UnavailableCoinCard';
 import LimitSelector from '../components/LimitSelector';
 import FilterInput from '../components/FilterInput';
 import SortSelector from '../components/SortSelector';
@@ -27,11 +28,11 @@ const HomePage = () => {
   }
 
   const list = useCoinList(`per_page=${limit}`);
-  const favoriteList = useCoinList(
-    favoriteIds?.length
-      ? `ids=${favoriteIds.slice(0, MAX_IDS).map(encodeURIComponent).join(',')}&per_page=${MAX_IDS}`
-      : null
-  );
+  const requestedIds = favoriteIds?.slice(0, MAX_IDS) ?? [];
+  const favoritesQuery = requestedIds.length
+    ? `ids=${requestedIds.map(encodeURIComponent).join(',')}&per_page=${MAX_IDS}`
+    : null;
+  const favoriteList = useCoinList(favoritesQuery);
 
   const noFavorites = showFavorites && favorites.length === 0;
   const { coins, loading, error } = showFavorites ? favoriteList : list;
@@ -62,6 +63,18 @@ const HomePage = () => {
       }
     });
 
+  // CoinGecko omits coins it has no data for, such as delisted ones. They still
+  // need a card, or they could never be unstarred.
+  const unavailableIds =
+    showFavorites && favoriteList.loadedQuery === favoritesQuery
+      ? requestedIds.filter(
+          (id) =>
+            favorites.includes(id) &&
+            !coins.some((coin) => coin.id === id) &&
+            id.toLowerCase().includes(filter.toLowerCase())
+        )
+      : [];
+
   return (
     <div>
       <h1>🚀 Crypto Dash</h1>
@@ -87,16 +100,22 @@ const HomePage = () => {
 
       {!noFavorites && !loading && !error && (
         <main className='grid'>
-          {filteredCoins.length > 0 ? (
-            filteredCoins.map((coin) => (
-              <CoinCard
-                key={coin.id}
-                coin={coin}
-                isFavorite={favorites.includes(coin.id)}
-                onToggleFavorite={toggleFavorite}
-              />
-            ))
-          ) : (
+          {filteredCoins.map((coin) => (
+            <CoinCard
+              key={coin.id}
+              coin={coin}
+              isFavorite={favorites.includes(coin.id)}
+              onToggleFavorite={toggleFavorite}
+            />
+          ))}
+          {unavailableIds.map((id) => (
+            <UnavailableCoinCard
+              key={id}
+              id={id}
+              onToggleFavorite={toggleFavorite}
+            />
+          ))}
+          {filteredCoins.length === 0 && unavailableIds.length === 0 && (
             <p>No matching coins</p>
           )}
         </main>
