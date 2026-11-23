@@ -1,21 +1,43 @@
+import { useState } from 'react';
 import CoinCard from '../components/CoinCard';
 import LimitSelector from '../components/LimitSelector';
 import FilterInput from '../components/FilterInput';
 import SortSelector from '../components/SortSelector';
+import FavoritesToggle from '../components/FavoritesToggle';
 import Spinner from '../components/Spinner';
+import useCoinList from '../hooks/useCoinList';
+import useFavorites from '../hooks/useFavorites';
 
-const HomePage = ({
-  coins,
-  filter,
-  setFilter,
-  limit,
-  setLimit,
-  sortBy,
-  setSortBy,
-  loading,
-  error,
-}) => {
+// CoinGecko accepts at most 250 ids per request
+const MAX_IDS = 250;
+
+const HomePage = () => {
+  const [limit, setLimit] = useState(10);
+  const [filter, setFilter] = useState('');
+  const [sortBy, setSortBy] = useState('market_cap_desc');
+  const { favorites, toggleFavorite } = useFavorites();
+  // IDs to fetch for the favorites view, or null when it is off. Kept separate
+  // from favorites so unstarring a coin doesn't trigger a refetch.
+  const [favoriteIds, setFavoriteIds] = useState(null);
+  const showFavorites = favoriteIds !== null;
+
+  // Another tab can add favorites while the view is on
+  if (showFavorites && favorites.some((id) => !favoriteIds.includes(id))) {
+    setFavoriteIds(favorites);
+  }
+
+  const list = useCoinList(`per_page=${limit}`);
+  const favoriteList = useCoinList(
+    favoriteIds?.length
+      ? `ids=${favoriteIds.slice(0, MAX_IDS).map(encodeURIComponent).join(',')}&per_page=${MAX_IDS}`
+      : null
+  );
+
+  const noFavorites = showFavorites && favorites.length === 0;
+  const { coins, loading, error } = showFavorites ? favoriteList : list;
+
   const filteredCoins = coins
+    .filter((coin) => !showFavorites || favorites.includes(coin.id))
     .filter((coin) => {
       return (
         coin.name.toLowerCase().includes(filter.toLowerCase()) ||
@@ -43,19 +65,37 @@ const HomePage = ({
   return (
     <div>
       <h1>🚀 Crypto Dash</h1>
-      {loading && <Spinner color='white' />}
-      {error && <div className='error'>{error}</div>}
+      {!noFavorites && loading && <Spinner color='white' />}
+      {!noFavorites && error && <div className='error'>{error}</div>}
 
       <div className='top-controls'>
         <FilterInput filter={filter} onFilterChange={setFilter} />
-        <LimitSelector limit={limit} onLimitChange={setLimit} />
+        <FavoritesToggle
+          active={showFavorites}
+          count={favorites.length}
+          onToggle={() => setFavoriteIds(showFavorites ? null : favorites)}
+        />
+        <LimitSelector
+          limit={limit}
+          onLimitChange={setLimit}
+          disabled={showFavorites}
+        />
         <SortSelector sortBy={sortBy} onSortChange={setSortBy} />
       </div>
 
-      {!loading && !error && (
+      {noFavorites && <p>No favorites yet</p>}
+
+      {!noFavorites && !loading && !error && (
         <main className='grid'>
           {filteredCoins.length > 0 ? (
-            filteredCoins.map((coin) => <CoinCard key={coin.id} coin={coin} />)
+            filteredCoins.map((coin) => (
+              <CoinCard
+                key={coin.id}
+                coin={coin}
+                isFavorite={favorites.includes(coin.id)}
+                onToggleFavorite={toggleFavorite}
+              />
+            ))
           ) : (
             <p>No matching coins</p>
           )}

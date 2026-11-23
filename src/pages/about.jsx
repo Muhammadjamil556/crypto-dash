@@ -15,8 +15,8 @@ const AboutPage = () => {
         hooks, components, state management, and integrating with external APIs.
       </p>
       <p>
-        🚀 Future features might include detailed coin views, favorites,
-        pagination, and much more!
+        🚀 Future features might include detailed coin views, pagination, and
+        much more!
       </p>
     </div>
   );
