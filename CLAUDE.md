@@ -44,10 +44,6 @@ Chart.js is tree-shaken: scales, elements, and plugins must be registered with `
 
 Styling is one global stylesheet, `src/index.css`, except `not-found.jsx`, which uses an inline style object.
 
-## Known gaps
-
-- `coin-details.jsx` never resets `loading` or `error` when `id` changes and doesn't abort superseded requests. `useCoinList.js` and `CoinChart.jsx` show the pattern to follow.
-
 ## Conventions
 
 - Page files are kebab-case (`coin-details.jsx`); component files are PascalCase (`CoinCard.jsx`).
