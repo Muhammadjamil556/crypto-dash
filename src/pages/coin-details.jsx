@@ -4,6 +4,28 @@ import Spinner from '../components/Spinner';
 import CoinChart from '../components/CoinChart';
 const API_URL = import.meta.env.VITE_COIN_API_URL;
 
+// CoinGecko returns null or omits market fields for some coins
+const formatNumber = (value) => value?.toLocaleString() ?? 'N/A';
+const formatUsd = (value) =>
+  value != null ? `$${value.toLocaleString()}` : 'N/A';
+// new Date(null) is 1970, so missing dates need their own check
+const formatDate = (value) =>
+  value ? new Date(value).toLocaleDateString() : null;
+
+const formatPriceChange = (change, percentage) => {
+  const parts = [];
+  if (change != null) parts.push(`$${change.toFixed(2)}`);
+  if (percentage != null) parts.push(`(${percentage.toFixed(2)}%)`);
+  return parts.join(' ') || 'N/A';
+};
+
+const formatRecord = (price, date) => {
+  const formattedDate = formatDate(date);
+  return price != null && formattedDate
+    ? `${formatUsd(price)} on ${formattedDate}`
+    : formatUsd(price);
+};
+
 const CoinDetailsPage = () => {
   const { id } = useParams();
   const [coin, setCoin] = useState(null);
@@ -28,71 +50,73 @@ const CoinDetailsPage = () => {
     fetchCoin();
   }, [id]);
 
+  const market = coin?.market_data;
+  const description = coin?.description?.en;
+  const homepage = coin?.links?.homepage?.[0];
+  const explorer = coin?.links?.blockchain_site?.[0];
+
   return (
     <div className='coin-details-container'>
       <Link to='/'>← Back To Home</Link>
 
       <h1 className='coin-details-title'>
-        {coin ? `${coin.name} (${coin.symbol.toUpperCase()})` : 'Coin Details'}
+        {coin
+          ? `${coin.name}${coin.symbol ? ` (${coin.symbol.toUpperCase()})` : ''}`
+          : 'Coin Details'}
       </h1>
 
       {loading && <Spinner />}
       {error && <div className='error'>❌ {error}</div>}
 
-      {!loading && !error && (
+      {!loading && !error && coin && (
         <>
           <img
-            src={coin.image.large}
+            src={coin.image?.large}
             alt={coin.name}
             className='coin-details-image'
           />
 
-          <p>{coin.description.en.split('. ')[0] + '.'}</p>
+          {description && <p>{description.split('. ')[0] + '.'}</p>}
 
           <div className='coin-details-info'>
-            <h3>Rank: #{coin.market_cap_rank}</h3>
             <h3>
-              Current Price: $
-              {coin.market_data.current_price.usd.toLocaleString()}
+              Rank:{' '}
+              {coin.market_cap_rank != null ? `#${coin.market_cap_rank}` : 'N/A'}
             </h3>
+            <h3>Current Price: {formatUsd(market?.current_price?.usd)}</h3>
+            <h4>Market Cap: {formatUsd(market?.market_cap?.usd)}</h4>
+            <h4>24h High: {formatUsd(market?.high_24h?.usd)}</h4>
+            <h4>24h Low: {formatUsd(market?.low_24h?.usd)}</h4>
             <h4>
-              Market Cap: ${coin.market_data.market_cap.usd.toLocaleString()}
-            </h4>
-            <h4>24h High: ${coin.market_data.high_24h.usd.toLocaleString()}</h4>
-            <h4>24h Low: ${coin.market_data.low_24h.usd.toLocaleString()}</h4>
-            <h4>
-              24h Price Change: ${coin.market_data.price_change_24h.toFixed(2)}{' '}
-              ({coin.market_data.price_change_percentage_24h.toFixed(2)}%)
-            </h4>
-            <h4>
-              Circulating Supply:{' '}
-              {coin.market_data.circulating_supply.toLocaleString()}
+              24h Price Change:{' '}
+              {formatPriceChange(
+                market?.price_change_24h,
+                market?.price_change_percentage_24h
+              )}
             </h4>
             <h4>
-              Total Supply:{' '}
-              {coin.market_data.total_supply?.toLocaleString() || 'N/A'}
+              Circulating Supply: {formatNumber(market?.circulating_supply)}
+            </h4>
+            <h4>Total Supply: {formatNumber(market?.total_supply)}</h4>
+            <h4>
+              All-Time High:{' '}
+              {formatRecord(market?.ath?.usd, market?.ath_date?.usd)}
             </h4>
             <h4>
-              All-Time High: ${coin.market_data.ath.usd.toLocaleString()} on{' '}
-              {new Date(coin.market_data.ath_date.usd).toLocaleDateString()}
+              All-Time Low:{' '}
+              {formatRecord(market?.atl?.usd, market?.atl_date?.usd)}
             </h4>
-            <h4>
-              All-Time Low: ${coin.market_data.atl.usd.toLocaleString()} on{' '}
-              {new Date(coin.market_data.atl_date.usd).toLocaleDateString()}
-            </h4>
-            <h4>
-              Last Updated: {new Date(coin.last_updated).toLocaleDateString()}
-            </h4>
+            <h4>Last Updated: {formatDate(coin.last_updated) ?? 'N/A'}</h4>
           </div>
 
           <CoinChart coinId={coin.id} />
 
           <div className='coin-details-links'>
-            {coin.links.homepage[0] && (
+            {homepage && (
               <p>
                 🌐{' '}
                 <a
-                  href={coin.links.homepage[0]}
+                  href={homepage}
                   target='_blank'
                   rel='noopener noreferrer'
                 >
@@ -100,11 +124,11 @@ const CoinDetailsPage = () => {
                 </a>
               </p>
             )}
-            {coin.links.blockchain_site[0] && (
+            {explorer && (
               <p>
                 🧩{' '}
                 <a
-                  href={coin.links.blockchain_site[0]}
+                  href={explorer}
                   target='_blank'
                   rel='noopener noreferrer'
                 >
@@ -112,7 +136,7 @@ const CoinDetailsPage = () => {
                 </a>
               </p>
             )}
-            {coin.categories.length > 0 && (
+            {coin.categories?.length > 0 && (
               <p>Categories: {coin.categories.join(', ')}</p>
             )}
           </div>
