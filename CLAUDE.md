@@ -30,6 +30,8 @@ Restart the dev server after changing `.env`. Requests go directly from the brow
 
 Routing is declarative React Router v7, imported from `react-router` (not `react-router-dom`): `BrowserRouter` is in `main.jsx` and `Routes` in `App.jsx`. There are no loaders or data router. `BrowserRouter` means production hosting needs an SPA fallback to `index.html`.
 
+`components/ErrorBoundary.jsx` wraps `Routes`, so a render error in a page leaves the header usable. It clears on any navigation (`resetKey` is `location.key`). It isn't keyed by location, which would remount pages on every navigation. It doesn't catch errors in event handlers or fetches.
+
 Data is fetched in three independent places using `fetch` inside `useEffect`, with no shared API layer:
 
 1. **`hooks/useCoinList.js`** fetches `/coins/markets` for `pages/home.jsx`. It takes a query fragment (`'per_page=10'`), or `null` to skip fetching. Home calls it twice: once for the main list and once, by `ids`, for the favorites view. Home owns the control state, which unmounts with the page, so returning to Home resets the controls and refetches the list.
@@ -47,5 +49,5 @@ Styling is one global stylesheet, `src/index.css`, except `not-found.jsx`, which
 ## Conventions
 
 - Page files are kebab-case (`coin-details.jsx`); component files are PascalCase (`CoinCard.jsx`).
-- Components are arrow functions with a default export, and source files use single quotes, including in JSX attributes.
+- Components are arrow functions with a default export (except `ErrorBoundary.jsx`, which must be a class), and source files use single quotes, including in JSX attributes.
 - ESLint's `no-unused-vars` ignores variables matching `^[A-Z_]`.

@@ -158,6 +158,28 @@ a {
   outline-offset: 2px;
 }
 
+/* Error Boundary */
+.error-boundary {
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.error-boundary button {
+  margin-top: 1.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #1c1f26;
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+.error-boundary button:focus-visible {
+  outline: 2px solid #ffc107;
+  outline-offset: 2px;
+}
+
 /* Filter Input */
 .filter {
   margin-bottom: 2rem;
