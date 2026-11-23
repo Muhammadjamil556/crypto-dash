@@ -33,21 +33,35 @@ const CoinDetailsPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Abort superseded requests so a stale response can't overwrite newer state
+    const controller = new AbortController();
+
     const fetchCoin = async () => {
+      // Clear the previous coin so its name doesn't stay in the title
+      setCoin(null);
+      setLoading(true);
+      setError(null);
+
       try {
-        const res = await fetch(`${API_URL}/${id}`);
+        const res = await fetch(`${API_URL}/${id}`, {
+          signal: controller.signal,
+        });
         if (!res.ok) throw new Error('Failed to fetch data');
         const data = await res.json();
         setCoin(data);
       } catch (err) {
-        console.log(err);
-        setError(err.message);
+        if (!controller.signal.aborted) {
+          console.log(err);
+          setError(err.message);
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     fetchCoin();
+
+    return () => controller.abort();
   }, [id]);
 
   const market = coin?.market_data;
