@@ -47,7 +47,6 @@ Styling is one global stylesheet, `src/index.css`, except `not-found.jsx`, which
 ## Known gaps
 
 - `coin-details.jsx` never resets `loading` or `error` when `id` changes and doesn't abort superseded requests. `useCoinList.js` and `CoinChart.jsx` show the pattern to follow.
-- `coin-details.jsx` calls number methods on most `market_data` fields without null checks, so a null value crashes the render. `CoinCard.jsx` shows `N/A` instead.
 
 ## Conventions
 
